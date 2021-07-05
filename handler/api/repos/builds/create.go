@@ -39,6 +39,8 @@ func HandleCreate(
 			namespace    = chi.URLParam(r, "owner")
 			name         = chi.URLParam(r, "name")
 			sha          = r.FormValue("commit")
+			before       = r.FormValue("before")
+			after        = r.FormValue("after")
 			branch       = r.FormValue("branch")
 			sourceBranch = r.FormValue("source_branch")
 			targetBranch = r.FormValue("target_branch")
@@ -97,6 +99,12 @@ func HandleCreate(
 		if link == "" {
 			link = commit.Link
 		}
+		if before == "" {
+			before = commit.Sha
+		}
+		if after == "" {
+			after = commit.Sha
+		}
 
 		hook := &core.Hook{
 			Trigger:      trigger,
@@ -105,8 +113,8 @@ func HandleCreate(
 			Timestamp:    commit.Author.Date,
 			Title:        title,
 			Message:      commit.Message,
-			Before:       commit.Sha,
-			After:        commit.Sha,
+			Before:       before,
+			After:        after,
 			Ref:          ref,
 			Source:       sourceBranch,
 			Target:       targetBranch,
