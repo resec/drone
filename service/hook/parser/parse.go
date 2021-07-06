@@ -236,24 +236,7 @@ func (p *parser) Parse(req *http.Request, secretFunc func(string) string) (*core
 		}
 		return hook, repo, nil
 	case *scm.PullRequestHook:
-
-		// TODO(bradrydzewski) cleanup the pr close hook code.
-		if v.Action == scm.ActionClose {
-			return &core.Hook{
-					Trigger: core.TriggerHook,
-					Event:   core.EventPullRequest,
-					Action:  core.ActionClose,
-					After:   v.PullRequest.Sha,
-					Ref:     v.PullRequest.Ref,
-				}, &core.Repository{
-					UID:       v.Repo.ID,
-					Namespace: v.Repo.Namespace,
-					Name:      v.Repo.Name,
-					Slug:      scm.Join(v.Repo.Namespace, v.Repo.Name),
-				}, nil
-		}
-
-		if v.Action != scm.ActionOpen && v.Action != scm.ActionSync {
+		if v.Action != scm.ActionOpen && v.Action != scm.ActionClose && v.Action != scm.ActionSync {
 			return nil, nil, nil
 		}
 		// Pull Requests are not supported for Bitbucket due
