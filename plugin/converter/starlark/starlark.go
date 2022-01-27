@@ -54,7 +54,7 @@ var (
 	ErrCannotLoad = errors.New("starlark: cannot load external scripts")
 )
 
-func Parse(req *core.ConvertArgs, template *core.Template, templateData map[string]interface{}) (string, error) {
+func Parse(req *core.ConvertArgs, template *core.Template, templateData map[string]interface{}, stepLimit uint64) (string, error) {
 	thread := &starlark.Thread{
 		Name: "drone",
 		Load: noLoad,
@@ -94,11 +94,17 @@ func Parse(req *core.ConvertArgs, template *core.Template, templateData map[stri
 
 	// create the input args and invoke the main method
 	// using the input args.
-	args := createArgs(req.Repo, req.Build, templateData)
+	args, err := createArgs(req.Repo, req.Build, templateData)
+	if err != nil {
+		return "", err
+	}
 
 	// set the maximum number of operations in the script. this
 	// mitigates long running scripts.
-	thread.SetMaxExecutionSteps(50000)
+	if stepLimit == 0 {
+		stepLimit = 50000
+	}
+	thread.SetMaxExecutionSteps(stepLimit)
 
 	// execute the main method in the script.
 	mainVal, err = starlark.Call(thread, main, args, nil)

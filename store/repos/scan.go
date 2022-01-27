@@ -25,36 +25,37 @@ import (
 // of named query parameters.
 func ToParams(v *core.Repository) map[string]interface{} {
 	return map[string]interface{}{
-		"repo_id":           v.ID,
-		"repo_uid":          v.UID,
-		"repo_user_id":      v.UserID,
-		"repo_namespace":    v.Namespace,
-		"repo_name":         v.Name,
-		"repo_slug":         v.Slug,
-		"repo_scm":          v.SCM,
-		"repo_clone_url":    v.HTTPURL,
-		"repo_ssh_url":      v.SSHURL,
-		"repo_html_url":     v.Link,
-		"repo_branch":       v.Branch,
-		"repo_private":      v.Private,
-		"repo_visibility":   v.Visibility,
-		"repo_active":       v.Active,
-		"repo_config":       v.Config,
-		"repo_trusted":      v.Trusted,
-		"repo_protected":    v.Protected,
-		"repo_no_forks":     v.IgnoreForks,
-		"repo_no_pulls":     v.IgnorePulls,
-		"repo_cancel_pulls": v.CancelPulls,
-		"repo_cancel_push":  v.CancelPush,
-		"repo_timeout":      v.Timeout,
-		"repo_throttle":     v.Throttle,
-		"repo_counter":      v.Counter,
-		"repo_synced":       v.Synced,
-		"repo_created":      v.Created,
-		"repo_updated":      v.Updated,
-		"repo_version":      v.Version,
-		"repo_signer":       v.Signer,
-		"repo_secret":       v.Secret,
+		"repo_id":             v.ID,
+		"repo_uid":            v.UID,
+		"repo_user_id":        v.UserID,
+		"repo_namespace":      v.Namespace,
+		"repo_name":           v.Name,
+		"repo_slug":           v.Slug,
+		"repo_scm":            v.SCM,
+		"repo_clone_url":      v.HTTPURL,
+		"repo_ssh_url":        v.SSHURL,
+		"repo_html_url":       v.Link,
+		"repo_branch":         v.Branch,
+		"repo_private":        v.Private,
+		"repo_visibility":     v.Visibility,
+		"repo_active":         v.Active,
+		"repo_config":         v.Config,
+		"repo_trusted":        v.Trusted,
+		"repo_protected":      v.Protected,
+		"repo_no_forks":       v.IgnoreForks,
+		"repo_no_pulls":       v.IgnorePulls,
+		"repo_cancel_pulls":   v.CancelPulls,
+		"repo_cancel_push":    v.CancelPush,
+		"repo_cancel_running": v.CancelRunning,
+		"repo_timeout":        v.Timeout,
+		"repo_throttle":       v.Throttle,
+		"repo_counter":        v.Counter,
+		"repo_synced":         v.Synced,
+		"repo_created":        v.Created,
+		"repo_updated":        v.Updated,
+		"repo_version":        v.Version,
+		"repo_signer":         v.Signer,
+		"repo_secret":         v.Secret,
 	}
 }
 
@@ -86,6 +87,7 @@ func scanRow(scanner db.Scanner, dest *core.Repository) error {
 		&dest.IgnorePulls,
 		&dest.CancelPulls,
 		&dest.CancelPush,
+		&dest.CancelRunning,
 		&dest.Synced,
 		&dest.Created,
 		&dest.Updated,
@@ -141,6 +143,7 @@ func scanRowBuild(scanner db.Scanner, dest *core.Repository) error {
 		&dest.IgnorePulls,
 		&dest.CancelPulls,
 		&dest.CancelPush,
+		&dest.CancelRunning,
 		&dest.Synced,
 		&dest.Created,
 		&dest.Updated,
@@ -204,4 +207,53 @@ func scanRowsBuild(rows *sql.Rows) ([]*core.Repository, error) {
 		repos = append(repos, repo)
 	}
 	return repos, nil
+}
+
+// helper function scans the sql.Row and copies the column values to the destination object.
+func repoBuildStageRowBuild(scanner db.Scanner, dest *core.RepoBuildStage) error {
+	err := scanner.Scan(
+		&dest.RepoNamespace,
+		&dest.RepoName,
+		&dest.RepoSlug,
+		&dest.BuildNumber,
+		&dest.BuildAuthor,
+		&dest.BuildAuthorName,
+		&dest.BuildAuthorEmail,
+		&dest.BuildAuthorAvatar,
+		&dest.BuildSender,
+		&dest.BuildStarted,
+		&dest.BuildFinished,
+		&dest.BuildCreated,
+		&dest.BuildUpdated,
+		&dest.StageName,
+		&dest.StageKind,
+		&dest.StageType,
+		&dest.StageStatus,
+		&dest.StageMachine,
+		&dest.StageOS,
+		&dest.StageArch,
+		&dest.StageVariant,
+		&dest.StageKernel,
+		&dest.StageLimit,
+		&dest.StageLimitRepo,
+		&dest.StageStarted,
+		&dest.StageStopped,
+	)
+	return err
+}
+
+// helper function scans the sql.Row and copies the column values to the destination object.
+func repoBuildStageRowsBuild(rows *sql.Rows) ([]*core.RepoBuildStage, error) {
+	defer rows.Close()
+
+	slices := []*core.RepoBuildStage{}
+	for rows.Next() {
+		row := new(core.RepoBuildStage)
+		err := repoBuildStageRowBuild(rows, row)
+		if err != nil {
+			return nil, err
+		}
+		slices = append(slices, row)
+	}
+	return slices, nil
 }

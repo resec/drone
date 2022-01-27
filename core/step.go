@@ -20,7 +20,7 @@ type (
 	// Step represents an individual step in the stage.
 	Step struct {
 		ID        int64    `json:"id"`
-		StageID   int64    `json:"step_id"`
+		StageID   int64    `json:"step_id"` // this is a typo, fixing it has far reaching ramifications. It should only be attempted in a major version change
 		Number    int      `json:"number"`
 		Name      string   `json:"name"`
 		Status    string   `json:"status"`
@@ -33,6 +33,7 @@ type (
 		DependsOn []string `json:"depends_on,omitempty"`
 		Image     string   `json:"image,omitempty"`
 		Detached  bool     `json:"detached,omitempty"`
+		Schema    string   `json:"schema,omitempty"`
 	}
 
 	// StepStore persists build step information to storage.

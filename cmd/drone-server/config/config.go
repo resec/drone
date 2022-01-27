@@ -63,6 +63,7 @@ type (
 		Logging      Logging
 		Prometheus   Prometheus
 		Proxy        Proxy
+		Redis        Redis
 		Registration Registration
 		Registries   Registries
 		Repository   Repository
@@ -85,6 +86,7 @@ type (
 		GitLab    GitLab
 		Gogs      Gogs
 		Stash     Stash
+		Gitee     Gitee
 	}
 
 	// Cloning provides the cloning configuration.
@@ -138,12 +140,14 @@ type (
 
 	// Jsonnet configures the jsonnet plugin
 	Jsonnet struct {
-		Enabled bool `envconfig:"DRONE_JSONNET_ENABLED"`
+		Enabled     bool `envconfig:"DRONE_JSONNET_ENABLED"`
+		ImportLimit int  `envconfig:"DRONE_JSONNET_IMPORT_LIMIT" default:"0"`
 	}
 
 	// Starlark configures the starlark plugin
 	Starlark struct {
-		Enabled bool `envconfig:"DRONE_STARLARK_ENABLED"`
+		Enabled   bool   `envconfig:"DRONE_STARLARK_ENABLED"`
+		StepLimit uint64 `envconfig:"DRONE_STARLARK_STEP_LIMIT"`
 	}
 
 	// License provides license configuration
@@ -164,6 +168,14 @@ type (
 	// Prometheus provides the prometheus configuration.
 	Prometheus struct {
 		EnableAnonymousAccess bool `envconfig:"DRONE_PROMETHEUS_ANONYMOUS_ACCESS" default:"false"`
+	}
+
+	// Redis provides the redis configuration.
+	Redis struct {
+		ConnectionString string `envconfig:"DRONE_REDIS_CONNECTION"`
+		Addr             string `envconfig:"DRONE_REDIS_ADDR"`
+		Password         string `envconfig:"DRONE_REDIS_PASSWORD"`
+		DB               int    `envconfig:"DRONE_REDIS_DB"`
 	}
 
 	// Repository provides the repository configuration.
@@ -266,10 +278,9 @@ type (
 
 	// Session provides the session configuration.
 	Session struct {
-		Timeout     time.Duration `envconfig:"DRONE_COOKIE_TIMEOUT" default:"720h"`
-		Secret      string        `envconfig:"DRONE_COOKIE_SECRET"`
-		Secure      bool          `envconfig:"DRONE_COOKIE_SECURE"`
-		MappingFile string        `envconfig:"DRONE_LEGACY_TOKEN_MAPPING_FILE"`
+		Timeout time.Duration `envconfig:"DRONE_COOKIE_TIMEOUT" default:"720h"`
+		Secret  string        `envconfig:"DRONE_COOKIE_SECRET"`
+		Secure  bool          `envconfig:"DRONE_COOKIE_SECURE"`
 	}
 
 	// Status provides status configurations.
@@ -351,6 +362,18 @@ type (
 		Scope        []string `envconfig:"DRONE_GITHUB_SCOPE" default:"repo,repo:status,user:email,read:org"`
 		RateLimit    int      `envconfig:"DRONE_GITHUB_USER_RATELIMIT"`
 		Debug        bool     `envconfig:"DRONE_GITHUB_DEBUG"`
+	}
+
+	// Gitee providers the gitee client configuration.
+	Gitee struct {
+		Server       string   `envconfig:"DRONE_GITEE_SERVER" default:"https://gitee.com"`
+		APIServer    string   `envconfig:"DRONE_GITEE_API_SERVER" default:"https://gitee.com/api/v5"`
+		ClientID     string   `envconfig:"DRONE_GITEE_CLIENT_ID"`
+		ClientSecret string   `envconfig:"DRONE_GITEE_CLIENT_SECRET"`
+		RedirectURL  string   `envconfig:"DRONE_GITEE_REDIRECT_URL"`
+		SkipVerify   bool     `envconfig:"DRONE_GITEE_SKIP_VERIFY"`
+		Scope        []string `envconfig:"DRONE_GITEE_SCOPE" default:"user_info,projects,pull_requests,hook"`
+		Debug        bool     `envconfig:"DRONE_GITEE_DEBUG"`
 	}
 
 	// GitLab provides the gitlab client configuration.
@@ -466,6 +489,12 @@ func (c *Config) IsGitea() bool {
 	return c.Gitea.Server != ""
 }
 
+// IsGitee returns true if the Gitee integration
+// is activated.
+func (c *Config) IsGitee() bool {
+	return c.Gitee.ClientID != ""
+}
+
 // IsBitbucket returns true if the Bitbucket Cloud
 // integration is activated.
 func (c *Config) IsBitbucket() bool {
@@ -478,17 +507,28 @@ func (c *Config) IsStash() bool {
 	return c.Stash.Server != ""
 }
 
+func cleanHostname(hostname string) string {
+	hostname = strings.ToLower(hostname)
+	hostname = strings.TrimPrefix(hostname, "http://")
+	hostname = strings.TrimPrefix(hostname, "https://")
+
+	return hostname
+}
+
 func defaultAddress(c *Config) {
 	if c.Server.Key != "" || c.Server.Cert != "" || c.Server.Acme {
 		c.Server.Port = ":443"
 		c.Server.Proto = "https"
 	}
+	c.Server.Host = cleanHostname(c.Server.Host)
 	c.Server.Addr = c.Server.Proto + "://" + c.Server.Host
 }
 
 func defaultProxy(c *Config) {
 	if c.Proxy.Host == "" {
 		c.Proxy.Host = c.Server.Host
+	} else {
+		c.Proxy.Host = cleanHostname(c.Proxy.Host)
 	}
 	if c.Proxy.Proto == "" {
 		c.Proxy.Proto = c.Server.Proto

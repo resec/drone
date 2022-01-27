@@ -32,38 +32,69 @@ const (
 type (
 	// Repository represents a source code repository.
 	Repository struct {
-		ID          int64  `json:"id"`
-		UID         string `json:"uid"`
-		UserID      int64  `json:"user_id"`
-		Namespace   string `json:"namespace"`
-		Name        string `json:"name"`
-		Slug        string `json:"slug"`
-		SCM         string `json:"scm"`
-		HTTPURL     string `json:"git_http_url"`
-		SSHURL      string `json:"git_ssh_url"`
-		Link        string `json:"link"`
-		Branch      string `json:"default_branch"`
-		Private     bool   `json:"private"`
-		Visibility  string `json:"visibility"`
-		Active      bool   `json:"active"`
-		Config      string `json:"config_path"`
-		Trusted     bool   `json:"trusted"`
-		Protected   bool   `json:"protected"`
-		IgnoreForks bool   `json:"ignore_forks"`
-		IgnorePulls bool   `json:"ignore_pull_requests"`
-		CancelPulls bool   `json:"auto_cancel_pull_requests"`
-		CancelPush  bool   `json:"auto_cancel_pushes"`
-		Timeout     int64  `json:"timeout"`
-		Throttle    int64  `json:"throttle,omitempty"`
-		Counter     int64  `json:"counter"`
-		Synced      int64  `json:"synced"`
-		Created     int64  `json:"created"`
-		Updated     int64  `json:"updated"`
-		Version     int64  `json:"version"`
-		Signer      string `json:"-"`
-		Secret      string `json:"-"`
-		Build       *Build `json:"build,omitempty"`
-		Perms       *Perm  `json:"permissions,omitempty"`
+		ID            int64  `json:"id"`
+		UID           string `json:"uid"`
+		UserID        int64  `json:"user_id"`
+		Namespace     string `json:"namespace"`
+		Name          string `json:"name"`
+		Slug          string `json:"slug"`
+		SCM           string `json:"scm"`
+		HTTPURL       string `json:"git_http_url"`
+		SSHURL        string `json:"git_ssh_url"`
+		Link          string `json:"link"`
+		Branch        string `json:"default_branch"`
+		Private       bool   `json:"private"`
+		Visibility    string `json:"visibility"`
+		Active        bool   `json:"active"`
+		Config        string `json:"config_path"`
+		Trusted       bool   `json:"trusted"`
+		Protected     bool   `json:"protected"`
+		IgnoreForks   bool   `json:"ignore_forks"`
+		IgnorePulls   bool   `json:"ignore_pull_requests"`
+		CancelPulls   bool   `json:"auto_cancel_pull_requests"`
+		CancelPush    bool   `json:"auto_cancel_pushes"`
+		CancelRunning bool   `json:"auto_cancel_running"`
+		Timeout       int64  `json:"timeout"`
+		Throttle      int64  `json:"throttle,omitempty"`
+		Counter       int64  `json:"counter"`
+		Synced        int64  `json:"synced"`
+		Created       int64  `json:"created"`
+		Updated       int64  `json:"updated"`
+		Version       int64  `json:"version"`
+		Signer        string `json:"-"`
+		Secret        string `json:"-"`
+		Build         *Build `json:"build,omitempty"`
+		Perms         *Perm  `json:"permissions,omitempty"`
+		Archived      bool   `json:"archived"`
+	}
+
+	RepoBuildStage struct {
+		RepoNamespace     string `json:"repo_namespace"`
+		RepoName          string `json:"repo_name"`
+		RepoSlug          string `json:"repo_slug"`
+		BuildNumber       int64  `json:"build_number"`
+		BuildAuthor       string `json:"build_author"`
+		BuildAuthorName   string `json:"build_author_name"`
+		BuildAuthorEmail  string `json:"build_author_email"`
+		BuildAuthorAvatar string `json:"build_author_avatar"`
+		BuildSender       string `json:"build_sender"`
+		BuildStarted      int64  `json:"build_started"`
+		BuildFinished     int64  `json:"build_finished"`
+		BuildCreated      int64  `json:"build_created"`
+		BuildUpdated      int64  `json:"build_updated"`
+		StageName         string `json:"stage_name"`
+		StageKind         string `json:"stage_kind"`
+		StageType         string `json:"stage_type"`
+		StageStatus       string `json:"stage_status"`
+		StageMachine      string `json:"stage_machine"`
+		StageOS           string `json:"stage_os"`
+		StageArch         string `json:"stage_arch"`
+		StageVariant      string `json:"stage_variant"`
+		StageKernel       string `json:"stage_kernel"`
+		StageLimit        string `json:"stage_limit"`
+		StageLimitRepo    string `json:"stage_limit_repo"`
+		StageStarted      int64  `json:"stage_started"`
+		StageStopped      int64  `json:"stage_stopped"`
 	}
 
 	// RepositoryStore defines operations for working with repositories.
@@ -82,6 +113,9 @@ type (
 		// ListIncomplete returns a non-unique repository list form
 		// the datastore with incomplete builds.
 		ListIncomplete(context.Context) ([]*Repository, error)
+
+		// ListRunningStatus returns a list of build / repository /stage information for builds that are incomplete.
+		ListRunningStatus(context.Context) ([]*RepoBuildStage, error)
 
 		// ListAll returns a paginated list of all repositories
 		// stored in the database, including disabled repositories.
